@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Music Player — Node.js Architecture & Learning Guide</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --code-bg: #090d16;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-color);
+      border: 1px solid var(--accent-color);
+    }
+
+    section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    section h2 {
+      font-size: 1.4rem;
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.5rem;
+    }
+
+    p {
+      margin-bottom: 1rem;
+    }
+
+    pre, code {
+      font-family: "Fira Code", Monaco, Consolas, "Courier New", monospace;
+    }
+
+    pre {
+      background: var(--code-bg);
+      padding: 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid var(--card-border);
+      color: #e2e8f0;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      background: var(--code-bg);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    th {
+      background-color: rgba(56, 189, 248, 0.1);
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pro-con-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .pro-con-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pro-box, .con-box {
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .pro-box {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .pro-box h4 {
+      color: var(--success);
+      margin-bottom: 0.5rem;
+    }
+
+    .con-box {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    .con-box h4 {
+      color: var(--danger);
+      margin-bottom: 0.5rem;
+    }
+
+    ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    .status-badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-completed {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--success);
+    }
+
+    .status-pending {
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎵 Terminal Music Player</h1>
+      <p>Node.js CLI & Process Management Learning Guide</p>
+      <span class="badge">In-Class Presentation Reference</span>
+    </header>
+
+    <!-- Architecture Section -->
+    <section>
+      <h2>1. Architecture & Component Interaction</h2>
+      <pre>
+User Input (Keyboard)
+       │
+       ▼
+┌────────────────────────────────────────────────────────┐
+│ index.js (CLI / Readline)                              │
+│  - Captures input line-by-line                         │
+│  - Parses command & arguments                          │
+└──────────────┬──────────────────────────┬──────────────┘
+               │                          │
+               ▼                          ▼
+┌─────────────────────────────┐  ┌─────────────────────────────┐
+│ lib/playlist.js             │  │ lib/player.js               │
+│  - Scans `songs/` directory │  │  - Spawns child process     │
+│  - Filters valid formats    │  │    (e.g., `afplay` macOS)   │
+│  - Manages track index      │  │  - Sends process signals    │
+└─────────────────────────────┘  └──────────────┬──────────────┘
+                                                │
+                                                ▼
+                                 ┌─────────────────────────────┐
+                                 │ Child Process (Audio Tool)  │
+                                 └─────────────────────────────┘
+      </pre>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Role</th>
+            <th>Node.js Standard Modules Used</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>index.js</code></td>
+            <td>CLI / Prompt & Parser</td>
+            <td><code>readline</code></td>
+          </tr>
+          <tr>
+            <td><code>lib/playlist.js</code></td>
+            <td>File Scanning & Metadata</td>
+            <td><code>fs</code>, <code>path</code></td>
+          </tr>
+          <tr>
+            <td><code>lib/player.js</code></td>
+            <td>Audio Execution & Signals</td>
+            <td><code>child_process</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Concepts Section -->
+    <section>
+      <h2>2. Core Technical Concepts</h2>
+      
+      <h3>A. Readline & Streams (<code>readline</code>)</h3>
+      <p>Node.js streams data line-by-line without blocking the main event loop. <code>readline.createInterface</code> connects <code>process.stdin</code> (input stream) and <code>process.stdout</code> (output stream).</p>
+
+      <h3>B. File System & Normalization (<code>fs</code> & <code>path</code>)</h3>
+      <p>Using <code>fs.readdirSync()</code> to scan the directory and <code>path.extname()</code> to filter unsupported audio formats. <code>path.join()</code> guarantees cross-platform file path resolution (Mac/Linux vs Windows).</p>
+
+      <h3>C. Child Process Spawning & Control (<code>child_process.spawn</code>)</h3>
+      <p>Instead of embedding heavy C++ audio libraries, Node.js delegates audio playing to native OS tools using <code>spawn()</code>. We interact with the process using signals (e.g. <code>SIGSTOP</code> to pause, <code>SIGCONT</code> to resume).</p>
+    </section>
+
+    <!-- Pros and Cons -->
+    <section>
+      <h2>3. Architectural Approach Comparison</h2>
+      <p>When presenting this project, explain why we selected our current approach over alternatives:</p>
+
+      <h3>Selected Approach: Standard Node.js Native Modules</h3>
+      <div class="pro-con-grid">
+        <div class="pro-box">
+          <h4>✅ Advantages (Pros)</h4>
+          <ul>
+            <li>Zero external npm dependencies.</li>
+            <li>Direct hands-on experience with Node.js streams, OS signals, and child processes.</li>
+            <li>Extremely lightweight and fast execution.</li>
+          </ul>
+        </div>
+        <div class="con-box">
+          <h4>❌ Disadvantages (Cons)</h4>
+          <ul>
+            <li>Requires an audio CLI utility pre-installed on the OS (e.g. <code>afplay</code> on macOS).</li>
+            <li>Process control behavior can vary slightly across operating systems.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 1.5rem;">Alternative 1: Single Monolithic File</h3>
+      <div class="pro-con-grid">
+        <div class="pro-box">
+          <h4>✅ Advantages (Pros)</h4>
+          <ul>
+            <li>Fewer files to manage initially.</li>
+          </ul>
+        </div>
+        <div class="con-box">
+          <h4>❌ Disadvantages (Cons)</h4>
+          <ul>
+            <li>Violates Separation of Concerns.</li>
+            <li>Hard to test, maintain, or expand.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 1.5rem;">Alternative 2: Third-Party Frameworks (Commander.js / Play-Sound)</h3>
+      <div class="pro-con-grid">
+        <div class="pro-box">
+          <h4>✅ Advantages (Pros)</h4>
+          <ul>
+            <li>Saves code by abstracting CLI parsing and process spawning.</li>
+          </ul>
+        </div>
+        <div class="con-box">
+          <h4>❌ Disadvantages (Cons)</h4>
+          <ul>
+            <li>Hides internal Node.js mechanics, reducing educational value.</li>
+            <li>Adds <code>node_modules</code> weight and potential vulnerability overhead.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress Roadmap -->
+    <section>
+      <h2>4. Implementation Progress</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>Status</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Step 1: Readline CLI Loop</td>
+            <td><span class="status-badge status-completed">Completed</span></td>
+            <td>Created interactive shell, <code>help</code>, and <code>exit</code> commands in <code>index.js</code>.</td>
+          </tr>
+          <tr>
+            <td>Step 2: Playlist Scanner</td>
+            <td><span class="status-badge status-completed">Completed</span></td>
+            <td>Scanning <code>songs/</code> directory, extension validation in <code>lib/playlist.js</code>.</td>
+          </tr>
+          <tr>
+            <td>Step 3: Player & Child Process</td>
+            <td><span class="status-badge status-completed">Completed</span></td>
+            <td>Implementing <code>child_process.spawn</code>, signal handlers (SIGSTOP/SIGCONT) in <code>lib/player.js</code>.</td>
+          </tr>
+          <tr>
+            <td>Step 4: Full Command Integration</td>
+            <td><span class="status-badge status-completed">Completed</span></td>
+            <td>Wired commands (play, pause, resume, stop, next, prev, current) in index.js and graceful shutdown.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Q&A Section -->
+    <section>
+      <h2>5. Presentation Q&A Preparation</h2>
+      
+      <p><strong>Q: Why use <code>child_process.spawn()</code> instead of <code>child_process.exec()</code>?</strong><br>
+      <em>A: <code>spawn()</code> streams data asynchronously as the child process executes and handles long-running processes cleanly. <code>exec()</code> buffers output into memory until process completion. Furthermore, <code>spawn()</code> passes arguments directly as an array without passing through a shell, safely handling filenames with spaces (e.g. <code>PARTY PEOPLE.mp3</code>) without shell injection risks.</em></p>
+      
+      <p><strong>Q: How does the application distinguish natural song completion from manual <code>stop</code> or corrupted audio files?</strong><br>
+      <em>A: By enforcing a triple check in the <code>exit</code> listener: (1) <code>isManualStop === false</code>, (2) exit code is <code>0</code> (success), and (3) <code>durationMs > 1500</code>. If an audio file is invalid or dummy text, <code>afplay</code> exits in under 5ms; the duration guard prevents rapid infinite auto-next recursion loops.</em></p>
+
+      <p><strong>Q: Why does pausing an external audio player (like <code>afplay</code>) using OS signals cause a minor audio jitter?</strong><br>
+      <em>A: <code>afplay</code> streams audio data into macOS CoreAudio hardware ring buffers. Sending <code>SIGSTOP</code> or <code>SIGTSTP</code> instantly halts the process CPU instructions, but the sound card hardware drains the remaining ~50–100ms of buffered audio frames before going silent. This highlights the trade-off of OS process-level signaling vs native in-memory audio framework controls.</em></p>
+    </section>
+
+    <!-- Debugging Sessions Section -->
+    <section>
+      <h2>6. Real-World Debugging Sessions & Case Studies</h2>
+
+      <div class="pro-con-grid" style="grid-template-columns: 1fr; margin-top: 1rem;">
+        <div class="pro-box" style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--card-border);">
+          <h4 style="color: var(--accent-color);">🐞 Case Study 1: The Rapid Auto-Next Loop Bug</h4>
+          <p><strong>Symptom:</strong> Playing dummy placeholder files (<code>sample1.mp3</code>) triggered a rapid infinite terminal recursion output loop.</p>
+          <p><strong>Root Cause:</strong> Invalid audio format caused <code>afplay</code> to exit in under 5ms. The process <code>exit</code> listener misinterpreted instant process failure as natural track completion, repeatedly invoking <code>autoNext()</code>.</p>
+          <p><strong>Fix:</strong> Implemented a <strong>Triple Completion Guard</strong> checking <code>isManualStop === false</code>, exit code <code>0</code>, and minimum track playback duration (<code>durationMs > 1500</code>).</p>
+        </div>
+
+        <div class="pro-box" style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--card-border); margin-top: 1rem;">
+          <h4 style="color: var(--accent-color);">🔊 Case Study 2: CoreAudio Hardware Buffer Drain Jitter</h4>
+          <p><strong>Symptom:</strong> Executing <code>pause</code> produced a micro audio repeat/jitter sound right before going silent.</p>
+          <p><strong>Root Cause:</strong> OS signal <code>SIGSTOP</code> freezes CPU execution in kernel space, but macOS CoreAudio sound card hardware continues to drain the remaining 50–100ms of PCM audio frames stored in hardware DMA memory.</p>
+          <p><strong>Fix:</strong> Switched pause signal from <code>SIGSTOP</code> to <code>SIGTSTP</code> (Terminal Stop) to give terminal applications cleaner suspension signals.</p>
+        </div>
+
+        <div class="pro-box" style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--card-border); margin-top: 1rem;">
+          <h4 style="color: var(--accent-color);">📁 Case Study 3: Filenames with Spaces (<code>PARTY PEOPLE.mp3</code>)</h4>
+          <p><strong>Symptom:</strong> Ensuring songs downloaded with spaces in filenames play correctly without CLI shell errors.</p>
+          <p><strong>Root Cause:</strong> Standard shell string concatenation breaks on space delimiters unless escaped.</p>
+          <p><strong>Fix:</strong> Used <code>child_process.spawn(command, [args])</code>, passing file path arguments directly to OS system calls as array elements, completely eliminating shell escaping bugs.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
