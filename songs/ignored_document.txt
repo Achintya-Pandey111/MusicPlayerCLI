@@ -1,0 +1,1 @@
+This file should be ignored by playlist.js because it is not an audio file.
